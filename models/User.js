@@ -2,9 +2,10 @@ import mongoose from 'mongoose';
 
 const userSchema = new mongoose.Schema(
   {
-    email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
     name: { type: String, required: true },
+    role: { type: String, enum: ['counselee', 'counselor'], required: true },
+    email: { type: String, required: true, unique: true },
+    authCode: { type: String, required: true }, // 추후 인증 코드로 사용
   },
   {
     timestamps: true,

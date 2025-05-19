@@ -1,6 +1,14 @@
+import { Roles } from '../constants/constant.js';
 export const validateEmail = (email) => {
   const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return re.test(email);
+};
+
+export const validateRole = (role) => {
+  if (role == Roles.COUNSELEE || role == Roles.COUNSELOR) {
+    return true;
+  }
+  return false;
 };
 
 export const validatePassword = (password) => {
