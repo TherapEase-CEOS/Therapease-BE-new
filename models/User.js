@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 const userSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
-    role: { type: String, enum: ['counselee', 'counselor'], required: true },
+    role: { type: String, enum: ['client', 'counselor'], required: true },
     email: { type: String, required: true, unique: true },
     authCode: { type: String, required: true }, // 추후 인증 코드로 사용
   },

@@ -3,6 +3,8 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { serialize } from 'cookie';
 import User from '../models/User.js';
+import Client from '../models/Client.js';
+import Counselor from '../models/Counselor.js';
 import { validateEmail, validateRole } from '../utils/validators.js';
 import { Roles } from '../constants/constant.js';
 
@@ -14,7 +16,12 @@ function generateAuthCode(user) {
   return `${initials}-${randomPart}`; // ex. 'CE-X7P9Q2'
 }
 
-// 회원가입 (Register)
+// 유저 등록 (Register)
+// ! 내담자는 상담사 계정으로만 등록 가능 -> 내담자 추가
+// 내담자를 만드려면 반드시 상담사와 연결시켜줘야하는데.. 요청 보낸이의 신원 정보에 상담사 id 가 들어있어야 맵핑 정보 생성이 가능함.
+// 그러면 1. 상담사는 DB 자체적으로 우리가 등록해주고, 2. 내담자 등록은 내담자 목록에서 추가해서 프로필 생성하거나, 반드시 상담사 계정으로만 요청보내도록?
+// 근데 그럼 /register 에서도 유저 권한을 검사해야하는데.. 애초에 /register 는 테스트용 API 니까 없어도 되긴해.
+// => 그냥 counselorId required 제한을 풀고, 이거는 유저만 등록하는 API 로 쓰고 나중에 연결하는건 내담자 추가로 미루기.
 router.post('/register', async (req, res) => {
   const user = req.body;
   const { email, name, role } = user;
@@ -34,6 +41,15 @@ router.post('/register', async (req, res) => {
 
     const newUser = new User({ email, role, name, authCode });
     await newUser.save();
+
+    //  역할에 따라 연결된 엔티티 생성
+    if (role === Roles.COUNSELEE) {
+      const client = new Client({ userId: newUser._id });
+      await client.save();
+    } else if (role === Roles.COUNSELOR) {
+      const counselor = new Counselor({ userId: newUser._id });
+      await counselor.save();
+    }
 
     /*
     비밀번호 포함 회원가입 확장 고려
