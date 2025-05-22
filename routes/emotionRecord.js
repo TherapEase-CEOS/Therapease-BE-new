@@ -62,9 +62,9 @@ router.get('/:clientId', async (req, res) => {
   try {
     const { clientId } = req.params;
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.page) || 7;
+    const limit = parseInt(req.query.limit) || 7;
 
-    const today = dayjs().startOf('day');
+    const today = dayjs().endOf('day');
     const sevenDaysAgo = today.subtract(6, 'day'); // 최근 7일 기준 시작점
 
     // [1] 최근 7일 날짜 배열 생성
@@ -93,31 +93,42 @@ router.get('/:clientId', async (req, res) => {
       };
     });
 
-    // [3] 8일 전 감정기록 중 실제로 존재하는 것만 조회 (페이징)
-
-    const skipCount = (page - 1) * limit;
-    const oldRecords = await EmotionRecord.find({
+    //  [3] 전체 페이지 계산을 위한 모든 레코드 조회
+    const oldRecordsCount = await EmotionRecord.countDocuments({
       clientId,
       date: { $lt: sevenDaysAgo.toDate() },
-    })
-      .sort({ date: -1 }) // 최신순
-      .skip(skipCount)
-      .limit(page === 1 ? limit - 7 : limit)
-      .lean();
+    });
 
-    const formattedOld = oldRecords.map((record) => ({
-      date: dayjs(record.date).format('YYYY-MM-DD'),
-      record,
-    }));
+    const totalPages = Math.ceil(oldRecordsCount / limit) + 1;
 
-    // [4] 첫 페이지에는 최근 7일 포함, 이후에는 오래된 기록만 포함
-    const responseRecords =
-      page === 1 ? [...recentResult, formattedOld] : formattedOld;
+    // [4] 일주일 전 감정기록 중 실제로 존재하는 것만 조회 (페이징)
+    let formattedOld = [];
+
+    if (page !== 1) {
+      const skipCount = (page - 2) * limit;
+      const oldRecords = await EmotionRecord.find({
+        clientId,
+        date: { $lt: sevenDaysAgo.toDate() },
+      })
+        .sort({ date: -1 }) // 최신순
+        .skip(skipCount)
+        .limit(limit)
+        .lean();
+
+      formattedOld = oldRecords.map((record) => ({
+        date: dayjs(record.date).format('YYYY-MM-DD'),
+        record,
+      }));
+    }
+
+    // [4] 첫 페이지에는 최근 7일만 포함, 이후에는 오래된 기록만 포함
+    const responseRecords = page === 1 ? [...recentResult] : formattedOld;
 
     res.status(200).json({
       clientId,
       page,
       limit,
+      totalPages,
       records: responseRecords,
     });
   } catch (err) {

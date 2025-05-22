@@ -4,7 +4,7 @@ import mongoose from 'mongoose';
 const emotionSchema = new mongoose.Schema({
   category: {
     type: String,
-    enum: ['Sad', 'Mad', 'Scared', 'Joyful', 'Powerful', 'Peaceful'],
+    enum: ['sad', 'mad', 'scared', 'joyful', 'powerful', 'peaceful'],
     required: true,
   },
   subcategory: { type: String, required: true },
