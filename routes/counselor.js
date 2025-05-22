@@ -129,3 +129,40 @@ router.get('/:counselorId/timetable', async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
+
+// 상담사 정보 (일정표 + 프로필) 조회
+// GET /:counselorId
+router.get('/:counselorId/full', async (req, res) => {
+  try {
+    const { counselorId } = req.params;
+
+    const availableTime = await AvailableTime.findOne({ counselorId }).lean();
+    if (!availableTime) {
+      return res.status(404).json({ message: 'Schedule not found' });
+    }
+
+    const counselor = await Counselor.findById(counselorId)
+      .populate('userId', 'name')
+      .lean();
+
+    if (!counselor) {
+      return res.status(404).json({ message: 'Counselor not found' });
+    }
+
+    const response = {
+      timetable: availableTime.timetable,
+      counselorProfile: {
+        name: counselor.userId?.name || '',
+        contact: counselor.contact || '',
+        introText: counselor.introText || '',
+      },
+    };
+
+    res.json(response);
+  } catch (error) {
+    console.error('❌ Error fetching counselor info:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+export default router;
