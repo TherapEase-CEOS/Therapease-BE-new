@@ -72,3 +72,39 @@ router.get('/:counselorId/profile', async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
+
+// [POST] 새로운 타임테이블 생성
+router.post('/:counselorId/timetable', async (req, res) => {
+  try {
+    const { counselorId } = req.params;
+
+    const exists = await AvailableTime.findOne({ counselorId });
+    if (exists) {
+      return res
+        .status(400)
+        .json({ message: 'Schedule already exists for this counselor.' });
+    }
+    const emptyDay = Array(15).fill(false);
+
+    const weeklySchedule = {
+      sunday: [...emptyDay],
+      monday: [...emptyDay],
+      tuesday: [...emptyDay],
+      wednesday: [...emptyDay],
+      thursday: [...emptyDay],
+      friday: [...emptyDay],
+      saturday: [...emptyDay],
+    };
+
+    const newSchedule = new AvailableTime({
+      counselorId,
+      timetable: { ...weeklySchedule },
+    });
+    await newSchedule.save();
+
+    res.status(201).json(newSchedule);
+  } catch (error) {
+    console.error('Error creating schedule:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
