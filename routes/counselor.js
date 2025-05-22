@@ -29,15 +29,17 @@ router.get('/clients', authMiddleware, async (req, res) => {
     // 4. 매칭
     const userMap = new Map(users.map((u) => [u._id.toString(), u]));
 
-    const clientWithUserInfo = clients.map((client) => {
-      const userInfo = userMap.get(client.userId.toString()) || {};
-      return {
-        ...client,
-        name: userInfo.name || '',
-      };
-    });
+    // 5. 필요한 필드만 추출
+    const formattedClients = clients.map((client) => ({
+      counselorId: client.counselorId?.toString(),
+      name: userMap.get(client.userId.toString()).name || '',
+      status: client.status,
+      createdAt: client.createdAt,
+      goal: client.goal,
+      weeklySchedule: client.weeklySchedule ?? [],
+    }));
 
-    res.status(200).json({ clients: clientWithUserInfo });
+    res.status(200).json({ clients: formattedClients });
   } catch (err) {
     console.error('❌ Failed to fetch client list:', err);
     res.status(500).json({ message: 'Server error' });

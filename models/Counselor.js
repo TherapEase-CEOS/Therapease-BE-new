@@ -8,6 +8,9 @@ export const counselorSchema = new mongoose.Schema({
     required: true,
     unique: true,
   },
+  contact: {
+    type: string,
+  },
 
   introText: { type: String },
 });

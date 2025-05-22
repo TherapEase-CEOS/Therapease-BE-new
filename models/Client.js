@@ -18,9 +18,27 @@ export const clientSchema = new mongoose.Schema(
       enum: ['ongoing', 'completed'],
       default: 'ongoing',
     },
+
+    weeklySchedule: [
+      {
+        day: {
+          type: String,
+          enum: [
+            'sunday',
+            'monday',
+            'tuesday',
+            'wednesday',
+            'thursday',
+            'friday',
+            'saturday',
+          ],
+        },
+        time: {
+          type: String, // '15:00' 형태 (24시간제)
+        },
+      },
+    ],
     goal: { type: String },
-    sessionDay: { type: String },
-    sessionTime: { type: Date },
   },
   {
     timestamps: true,
