@@ -1,21 +1,32 @@
-const jwt = require('jsonwebtoken');
+import { parse } from 'cookie';
+import jwt from 'jsonwebtoken';
 
 const authMiddleware = (req, res, next) => {
-  const authHeader = req.headers.authorization;
+  const cookies = req.headers.cookie;
+  console.log('📦 Raw Cookies:', cookies);
 
-  // Authorization: Bearer <token>
-  if (!authHeader || !authHeader.startsWith('Bearer '))
-    return res.status(401).json({ message: 'No token provided' });
+  if (!cookies) {
+    return res.status(401).json({ message: 'No cookies found' });
+  }
 
-  const token = authHeader.split(' ')[1];
+  // 쿠키 파싱
+  const parsedCookies = parse(cookies);
+  const token = parsedCookies.token;
+
+  console.log('🔐 Parsed token:', token);
+
+  if (!token) {
+    return res.status(401).json({ message: 'No token provided in cookies' });
+  }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded; // decoded.userId 사용 가능
+    console.log('✅ Decoded JWT:', decoded);
+    req.user = decoded; // req.user.userId, req.user.role 등 사용 가능
     next();
   } catch (err) {
-    return res.status(401).json({ message: 'Token is not valid' });
+    return res.status(401).json({ message: 'Invalid or expired token' });
   }
 };
 
-module.exports = authMiddleware;
+export default authMiddleware;
