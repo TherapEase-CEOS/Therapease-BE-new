@@ -43,3 +43,32 @@ router.get('/clients', authMiddleware, async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
+
+/**
+ * [GET] 상담사 프로필 조회
+ * GET /counselor/:id/profile
+ */
+router.get('/:counselorId/profile', async (req, res) => {
+  try {
+    const { counselorId } = req.params;
+
+    const counselor = await Counselor.findById(counselorId)
+      .populate('userId', 'name') // name 가져오기
+      .lean();
+
+    if (!counselor) {
+      return res.status(404).json({ message: 'Counselor not found' });
+    }
+
+    const profile = {
+      name: counselor.userId?.name || '',
+      contact: counselor.contact || '',
+      introText: counselor.introText || '',
+    };
+
+    res.status(200).json(profile);
+  } catch (error) {
+    console.error('❌ Error fetching counselor profile:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
