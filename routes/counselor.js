@@ -166,3 +166,73 @@ router.get('/:counselorId/full', async (req, res) => {
 });
 
 export default router;
+
+/**
+ * [PUT] 상담사 정보(일정표+프로필) 업데이트
+ */
+
+router.put('/:counselorId/full', async (req, res) => {
+  try {
+    const { counselorId } = req.params;
+    const { timetable, counselorProfile } = req.body;
+
+    // 유효성 검사: 요일 배열
+    const weekDays = [
+      'sunday',
+      'monday',
+      'tuesday',
+      'wednesday',
+      'thursday',
+      'friday',
+      'saturday',
+    ];
+    const valid = weekDays.every(
+      (day) => Array.isArray(timetable?.[day]) && timetable[day].length === 15
+    );
+
+    if (!valid) {
+      return res.status(400).json({
+        message: 'Each weekday must be an array of 15 boolean values.',
+      });
+    }
+
+    // 타임테이블 업데이트
+    const timeResult = await AvailableTime.findOneAndUpdate(
+      { counselorId },
+      { $set: { timetable } },
+      { new: true }
+    );
+
+    // 상담사 소개 및 연락처 업데이트
+    const profileResult = await Counselor.findByIdAndUpdate(
+      counselorId,
+      {
+        $set: {
+          contact: counselorProfile.contact,
+          introText: counselorProfile.introText,
+        },
+      },
+      { new: true }
+    ).populate('userId', 'name');
+
+    if (!timeResult || !profileResult) {
+      return res
+        .status(404)
+        .json({ message: 'Counselor or timetable not found.' });
+    }
+
+    const response = {
+      timetable: timeResult.timetable,
+      counselorProfile: {
+        name: profileResult.userId?.name || '',
+        contact: profileResult.contact || '',
+        introText: profileResult.introText || '',
+      },
+    };
+
+    res.json(response);
+  } catch (error) {
+    console.error('Error updating counselor info:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
