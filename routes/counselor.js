@@ -108,3 +108,24 @@ router.post('/:counselorId/timetable', async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
+
+/**
+ * [GET] 상담사 타임테이블 조회
+ * GET /counselors/:id/timetable
+ */
+router.get('/:counselorId/timetable', async (req, res) => {
+  try {
+    const { counselorId } = req.params;
+
+    const availableTime = await AvailableTime.findOne({ counselorId }).lean();
+
+    if (!availableTime) {
+      return res.status(404).json({ message: 'Timetable not found' });
+    }
+
+    res.status(200).json(availableTime.timetable); // timetable만 응답
+  } catch (error) {
+    console.error('❌ Error fetching timetable:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
